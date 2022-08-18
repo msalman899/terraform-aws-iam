@@ -117,3 +117,9 @@ variable "trusted_role_services" {
   type        = list(string)
   default     = []
 }
+
+variable "role_sts_externalid" {
+  description = "STS ExternalId condition values to use with a role (when MFA is not required)"
+  type        = any
+  default     = []
+}
