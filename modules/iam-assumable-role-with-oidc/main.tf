@@ -62,40 +62,32 @@ data "aws_iam_policy_document" "assume_role_with_oidc" {
     }
   }
 
-  dynamic "statement" {
-    for_each = length(var.trusted_role_arns) > 0 || length(var.trusted_role_arns) > 0 ? [true] : []
+  statement {
+
+    effect = "Allow"
+
+    actions = var.trusted_role_actions
+
+    principals {
+      type        = "AWS"
+      identifiers = var.trusted_role_arns
+    }
+
+    dynamic "principals" {
+      for_each = length(var.trusted_role_services) > 0 ? [true] : []
 
       content {
-
-      effect = "Allow"
-
-      actions = var.trusted_role_actions
-
-      dynamic "principals" {
-        for_each = length(var.trusted_role_arns) > 0 ? [true] : []
-
-        content {
-          type        = "AWS"
-          identifiers = var.trusted_role_arns
-        }
+        type        = "Service"
+        identifiers = var.trusted_role_services
       }
+    }
 
-      dynamic "principals" {
-        for_each = length(var.trusted_role_services) > 0 ? [true] : []
-
-        content {
-          type        = "Service"
-          identifiers = var.trusted_role_services
-        }
-      }
-
-      dynamic "condition" {
-        for_each = length(local.role_sts_externalid) != 0 && (length(var.trusted_role_arns) > 0 || length(var.trusted_role_arns) > 0) ? [true] : []
-        content {
-          test     = "StringEquals"
-          variable = "sts:ExternalId"
-          values   = local.role_sts_externalid
-        }
+    dynamic "condition" {
+      for_each = length(local.role_sts_externalid) != 0 ? [true] : []
+      content {
+        test     = "StringEquals"
+        variable = "sts:ExternalId"
+        values   = local.role_sts_externalid
       }
     }
 
