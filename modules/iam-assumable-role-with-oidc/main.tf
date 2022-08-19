@@ -62,29 +62,43 @@ data "aws_iam_policy_document" "assume_role_with_oidc" {
     }
   }
 
-  statement {
-    effect = "Allow"
+  dynamic "statement" {
+    for_each = length(var.trusted_role_arns) > 0 || length(var.trusted_role_arns) > 0 ? [true] : []
 
-    actions = var.trusted_role_actions
-
-    principals {
-      type        = "AWS"
-      identifiers = var.trusted_role_arns
-    }
-
-    principals {
-      type        = "Service"
-      identifiers = var.trusted_role_services
-    }
-
-    dynamic "condition" {
-      for_each = length(local.role_sts_externalid) != 0 ? [true] : []
       content {
-        test     = "StringEquals"
-        variable = "sts:ExternalId"
-        values   = local.role_sts_externalid
+
+      effect = "Allow"
+
+      actions = var.trusted_role_actions
+
+      dynamic "principals" {
+        for_each = length(var.trusted_role_arns) > 0 ? [true] : []
+
+        content {
+          type        = "AWS"
+          identifiers = var.trusted_role_arns
+        }
+      }
+
+      dynamic "principals" {
+        for_each = length(var.trusted_role_services) > 0 ? [true] : []
+
+        content {
+          type        = "Service"
+          identifiers = var.trusted_role_services
+        }
+      }
+
+      dynamic "condition" {
+        for_each = length(local.role_sts_externalid) != 0 && (length(var.trusted_role_arns) > 0 || length(var.trusted_role_arns) > 0) ? [true] : []
+        content {
+          test     = "StringEquals"
+          variable = "sts:ExternalId"
+          values   = local.role_sts_externalid
+        }
       }
     }
+
   }
 }
 
