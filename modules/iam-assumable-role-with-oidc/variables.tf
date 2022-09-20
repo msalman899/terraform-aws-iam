@@ -123,3 +123,9 @@ variable "role_sts_externalid" {
   type        = any
   default     = []
 }
+
+variable "assume_role_policy_without_condition" {
+  description = "flag to control whether create assume role policy for multiple eks cluster without condition (This is to avoid policy ACL size limit)"
+  type        = bool
+  default     = false
+}

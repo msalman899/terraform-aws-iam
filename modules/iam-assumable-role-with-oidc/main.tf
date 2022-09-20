@@ -17,7 +17,22 @@ data "aws_iam_policy_document" "assume_role_with_oidc" {
   count = var.create_role ? 1 : 0
 
   dynamic "statement" {
-    for_each = local.urls
+    for_each = var.assume_role_policy_without_condition ? [true] : []
+
+    content {
+      effect = "Allow"
+
+      actions = ["sts:AssumeRoleWithWebIdentity"]
+
+      principals {
+        type        = "Federated"
+        identifiers = [for url in local.urls : "arn:${data.aws_partition.current.partition}:iam::${local.aws_account_id}:oidc-provider/${url}"]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = !var.assume_role_policy_without_condition ? local.urls : []
 
     content {
       effect = "Allow"
