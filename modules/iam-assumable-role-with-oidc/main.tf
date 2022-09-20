@@ -32,7 +32,7 @@ data "aws_iam_policy_document" "assume_role_with_oidc" {
 
       content {
         test     = "StringEquals"
-        variable = "${statement.value}:sub"
+        variable = "${each.value}:sub"
         values   = var.oidc_fully_qualified_subjects
       }
     }
@@ -42,7 +42,7 @@ data "aws_iam_policy_document" "assume_role_with_oidc" {
 
       content {
         test     = "StringLike"
-        variable = "${statement.value}:sub"
+        variable = "${each.value}:sub"
         values   = var.oidc_subjects_with_wildcards
       }
     }
@@ -52,7 +52,7 @@ data "aws_iam_policy_document" "assume_role_with_oidc" {
 
       content {
         test     = "StringLike"
-        variable = "${statement.value}:aud"
+        variable = "${each.value}:aud"
         values   = var.oidc_fully_qualified_audiences
       }
     }
