@@ -16,7 +16,8 @@ data "aws_partition" "current" {}
 data "aws_iam_policy_document" "assume_role_with_oidc" {
   count = var.create_role ? 1 : 0
 
-  statement {
+  dynamic "statement" {
+    for_each = var.assume_role_policy_without_condition ? [true] : []
 
     effect = "Allow"
 
@@ -26,34 +27,50 @@ data "aws_iam_policy_document" "assume_role_with_oidc" {
       type        = "Federated"
       identifiers = [for url in local.urls : "arn:${data.aws_partition.current.partition}:iam::${local.aws_account_id}:oidc-provider/${url}"]
     }
+  }
 
-    dynamic "condition" {
-      for_each = length(var.oidc_fully_qualified_subjects) > 0 ? local.urls : []
+  dynamic "statement" {
+    for_each = !var.assume_role_policy_without_condition ? local.urls : []
 
-      content {
-        test     = "StringEquals"
-        variable = "${condition.value}:sub"
-        values   = var.oidc_fully_qualified_subjects
+    content {
+      effect = "Allow"
+
+      actions = ["sts:AssumeRoleWithWebIdentity"]
+
+      principals {
+        type = "Federated"
+
+        identifiers = ["arn:${data.aws_partition.current.partition}:iam::${local.aws_account_id}:oidc-provider/${statement.value}"]
       }
-    }
 
-    dynamic "condition" {
-      for_each = length(var.oidc_subjects_with_wildcards) > 0 ? local.urls : []
+      dynamic "condition" {
+        for_each = length(var.oidc_fully_qualified_subjects) > 0 ? local.urls : []
 
-      content {
-        test     = "StringLike"
-        variable = "${condition.value}:sub"
-        values   = var.oidc_subjects_with_wildcards
+        content {
+          test     = "StringEquals"
+          variable = "${statement.value}:sub"
+          values   = var.oidc_fully_qualified_subjects
+        }
       }
-    }
 
-    dynamic "condition" {
-      for_each = length(var.oidc_fully_qualified_audiences) > 0 ? local.urls : []
+      dynamic "condition" {
+        for_each = length(var.oidc_subjects_with_wildcards) > 0 ? local.urls : []
 
-      content {
-        test     = "StringLike"
-        variable = "${condition.value}:aud"
-        values   = var.oidc_fully_qualified_audiences
+        content {
+          test     = "StringLike"
+          variable = "${statement.value}:sub"
+          values   = var.oidc_subjects_with_wildcards
+        }
+      }
+
+      dynamic "condition" {
+        for_each = length(var.oidc_fully_qualified_audiences) > 0 ? local.urls : []
+
+        content {
+          test     = "StringLike"
+          variable = "${statement.value}:aud"
+          values   = var.oidc_fully_qualified_audiences
+        }
       }
     }
   }
